@@ -1,4 +1,3 @@
-# main.py
 from lexicalAnalyzer import LexicalAnalyzer, Type
 from interface import Interface
 
@@ -15,6 +14,7 @@ def process_input(input_text):
         tokens.append(token)
 
     print("Tokens:", tokens)
+    return tokens
 
 
 if __name__ == "__main__":
