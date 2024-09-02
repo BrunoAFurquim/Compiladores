@@ -1,7 +1,6 @@
 from lexicalAnalyzer import LexicalAnalyzer, Type
 from interface import Interface
 
-
 def process_input(input_text):
     lexer = LexicalAnalyzer(input_text)
     tokens = []
