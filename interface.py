@@ -11,35 +11,34 @@ class Interface:
         self.root.attributes('-fullscreen', True)
 
         self.menu_bar = tk.Menu(self.root)
-
         self.menu_bar.add_cascade(label="Open File", command=self.open_file)
-        self.menu_bar.add_cascade(
-            label="Run", command=self.run_lexical_analysis)
+        self.menu_bar.add_cascade(label="Run", command=self.run_lexical_analysis)
         self.menu_bar.add_cascade(label="Exit", command=self.root.quit)
-
         self.root.config(menu=self.menu_bar)
 
+        self.line_numbers = tk.Text(self.root, width=5, padx=5, state='disabled')
         self.left_text = tk.Text(self.root, wrap=tk.WORD)
         self.right_text = tk.Text(self.root, wrap=tk.WORD)
 
+        self.line_numbers.pack(side=tk.LEFT, fill=tk.Y)
         self.left_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.right_text.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
-        # Define tags for token types
         self.right_text.tag_configure("error", foreground="red")
         self.right_text.tag_configure("warning", foreground="yellow")
 
+        self.left_text.bind("<KeyRelease>", self.update_line_numbers)
+
     def open_file(self):
-        file_path = filedialog.askopenfilename(
-            filetypes=[("Text Files", "*.txt")])
+        file_path = filedialog.askopenfilename(filetypes=[("Text Files", "*.txt")])
         if file_path:
             with open(file_path, 'r') as file:
                 input_text = file.read()
 
             self.left_text.delete(1.0, tk.END)
             self.left_text.insert(tk.END, input_text)
-
             self.right_text.delete(1.0, tk.END)
+            self.update_line_numbers()
 
     def run_lexical_analysis(self):
         input_text = self.left_text.get(1.0, tk.END).strip()
@@ -58,6 +57,16 @@ class Interface:
                 tag = None
 
             self.right_text.insert(tk.END, f"{token}\n", tag)
+
+    def update_line_numbers(self, event=None):
+        self.line_numbers.config(state='normal')
+        self.line_numbers.delete(1.0, tk.END)
+
+        line_count = int(self.left_text.index('end-1c').split('.')[0])
+
+        line_number_string = "\n".join(str(i) for i in range(1, line_count + 1))
+        self.line_numbers.insert(1.0, line_number_string)
+        self.line_numbers.config(state='disabled')
 
     def run(self):
         self.root.mainloop()

@@ -18,8 +18,7 @@ class Token:
         self.position = position
 
     def __repr__(self):
-        return f"Token(type={self.type}, value={self.value}, position={self.position})\n"
-
+        return f"Token(type={self.type}, value={self.value}, line={self.position})\n"
 
 class LexicalAnalyzer:
     def __init__(self, input_str):
@@ -29,8 +28,11 @@ class LexicalAnalyzer:
         self.input = input_str
         self.position = 0
         self.current = self.input[self.position] if self.input else '\0'
+        self.line = 1
 
     def advance(self):
+        if self.current == '\n':
+            self.line += 1
         self.position += 1
         if self.position >= len(self.input):
             self.current = '\0'
@@ -42,18 +44,17 @@ class LexicalAnalyzer:
             self.advance()
 
     def number(self):
-        start_position = self.position
         result = []
         is_float = False
         while self.current != '\0' and (self.current.isdigit() or self.current == '.'):
             if self.current == '.':
                 if is_float:
-                    return Token(Type.UNKNOWN, f"ERROR: Unexpected character {self.current} at position {self.position}")
+                    return Token(Type.UNKNOWN, f"ERROR: Unexpected character {self.current} at line {self.line}")
                 is_float = True
             result.append(self.current)
             self.advance()
         num_str = ''.join(result)
-        return Token(Type.FLOAT if is_float else Type.INTEGER, num_str, start_position)
+        return Token(Type.FLOAT if is_float else Type.INTEGER, num_str, self.line)
 
     def proxT(self):
         while self.current != '\0':
@@ -63,33 +64,34 @@ class LexicalAnalyzer:
             if self.current.isdigit() or (self.current == '.' and self.position + 1 < len(self.input) and self.input[self.position + 1].isdigit()):
                 return self.number()
             if self.current == '+':
-                token_position = self.position
+                token_line = self.line
                 self.advance()
-                return Token(Type.PLUS, "+", token_position)
+                return Token(Type.PLUS, "+", token_line)
             if self.current == '-':
-                token_position = self.position
+                token_line = self.line
                 self.advance()
-                return Token(Type.MINUS, "-", token_position)
+                return Token(Type.MINUS, "-", token_line)
             if self.current == '*':
-                token_position = self.position
+                token_line = self.line
                 self.advance()
-                return Token(Type.MUL, "*", token_position)
+                return Token(Type.MUL, "*", token_line)
+            
             if self.current == '/':
-                token_position = self.position
+                token_line = self.line
                 self.advance()
-                return Token(Type.DIV, "/", token_position)
+                return Token(Type.DIV, "/", token_line)
             if self.current == '(':
-                token_position = self.position
+                token_line = self.line
                 self.advance()
-                return Token(Type.OPEN_PARENTHESES, "(", token_position)
+                return Token(Type.OPEN_PARENTHESES, "(", token_line)
             if self.current == ')':
-                token_position = self.position
+                token_line = self.line
                 self.advance()
-                return Token(Type.CLOSE_PARENTHESES, ")", token_position)
+                return Token(Type.CLOSE_PARENTHESES, ")", token_line)
 
             unknown_char = self.current
-            token_position = self.position
+            token_line = self.line
             self.advance()
-            return Token(Type.UNKNOWN, f"ERROR: {unknown_char} at position {token_position}", token_position)
+            return Token(Type.UNKNOWN, f"ERROR: {unknown_char} at line {token_line}", token_line)
 
-        return Token(Type.EOF, "", self.position)
+        return Token(Type.EOF, "", self.line)
