@@ -10,12 +10,11 @@ def process_input(input_text):
         token = lexer.proxT()
         if token.type == Type.EOF:
             break
-        tokens.append(token)
+        tokens.append(str(token))  
 
     print("Tokens:", tokens)
     return tokens
 
-
 if __name__ == "__main__":
     interface = Interface(process_input)
-    interface.run()
+    interface.run() 
