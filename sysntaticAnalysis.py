@@ -34,8 +34,30 @@ class Syntactic_Analysis:
         else:
             raise SystaxError("Invalid")
 
-    
-     #Purpose: work with '*' and '/'
+    #Work with Div and Mul
+    def term(self):
+        result = self.factor()
+        while self.current() and self.current()[0] in (MUL, DIV):
+            if self.current()[0] == MUL:
+                self.consume(MUL)
+                result *= self.factor()
+            elif self.current()[0] == DIV:
+                self.consume(DIV)
+                result /= self.factor()
+        return result
+
+    # Work with Plus and Minus
+    def expr(self):
+        result = self.term()
+        while self.current() and self.current()[0] in (PLUS, MINUS):
+            if self.current()[0] == PLUS:
+                self.consume(PLUS)
+                result += self.term()
+            elif self.current()[0] == MINUS:
+                self.consume(MINUS)
+                result -= self.term()
+        return result
+
 
     
 
