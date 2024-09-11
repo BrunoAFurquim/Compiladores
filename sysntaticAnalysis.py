@@ -27,7 +27,7 @@ class Syntactic_Analysis:
             self.expected(NUMBER)
             return float(token[1])
         elif token[0] == LPAREN:
-            self.consume(OPEN_PARENTHESES):
+            self.consume(OPEN_PARENTHESES)
             result = self.expr()
             self.expected(CLOSE_PARENTHESES)
             return result
