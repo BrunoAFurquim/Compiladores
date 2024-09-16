@@ -18,7 +18,7 @@ class Syntactic_Analysis:
             self.pos +=1
             return token
         else:
-            raise SystaxError(f"Expected an operation not a number")
+            return print("expected an operation not a number")
     
     # This def define the rules about the Parentheses and the systeshis about the number that are in
     def factor(self):
@@ -32,7 +32,7 @@ class Syntactic_Analysis:
             self.expected(CLOSE_PARENTHESES)
             return result
         else:
-            raise SystaxError("Invalid")
+            return SystaxError("Invalid")
 
     #Work with Div and Mul
     def term(self):
@@ -57,8 +57,3 @@ class Syntactic_Analysis:
                 self.consume(MINUS)
                 result -= self.term()
         return result
-
-
-    
-
-    
