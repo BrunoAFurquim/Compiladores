@@ -1,15 +1,38 @@
 class Type:
-    INTEGER = "INTEGER"
-    FLOAT = "FLOAT"
-    PLUS = "PLUS"
-    MINUS = "MINUS"
-    MUL = "MUL"
-    DIV = "DIV"
-    OPEN_PARENTHESES = "OPEN_PARENTHESES"
-    CLOSE_PARENTHESES = "CLOSE_PARENTHESES"
+    RESERVED_WORDS = {
+        "INT": "INT",
+        "FLOAT": "FLOAT",
+        "PROGRAM": "PROGRAM",
+        "PROCEDURE": "PROCEDURE",
+        "VAR": "VAR",
+        "BEGIN": "BEGIN",
+        "END": "END",
+        "IF": "IF",
+        "THEN": "THEN",
+        "ELSE": "ELSE",
+        "WHILE": "WHILE",
+        "DO": "DO",
+    }
+    
+    RESERVED_TOKENS = {
+        ';': "SEMICOLON",
+        ':': "COLON",
+        ',': "COMMA",
+        '(': "OPEN_PARENTHESES",
+        ')': "CLOSE_PARENTHESES",
+        '{': "OPEN_BRACKETS",
+        '}': "CLOSE_BRACKETS",
+        '+': "PLUS",
+        '-': "MINUS",
+        '*': "MUL",
+        '/': "DIV",
+        '_': "UNDERSCORE",
+        '=': "EQUAL",
+    }
+    
+    IDENTIFIER = "IDENTIFIER"
     EOF = "EOF"
     UNKNOWN = "UNKNOWN"
-
 
 class Token:
     def __init__(self, type, value, position=None):
@@ -19,7 +42,7 @@ class Token:
 
     def __repr__(self):
         return f"Token(type={self.type}, value={self.value}, line={self.position})\n"
-
+    
 class LexicalAnalyzer:
     def __init__(self, input_str):
         self.set_input(input_str)
@@ -34,64 +57,85 @@ class LexicalAnalyzer:
         if self.current == '\n':
             self.line += 1
         self.position += 1
-        if self.position >= len(self.input):
-            self.current = '\0'
-        else:
-            self.current = self.input[self.position]
+        self.current = self.input[self.position] if self.position < len(self.input) else '\0'
 
     def space(self):
         while self.current != '\0' and self.current.isspace():
             self.advance()
 
-    def number(self):
+    def reserved(self, word):
+
+        return Type.RESERVED_WORDS.get(word.upper(), Type.IDENTIFIER)
+
+    def identifier_or_number(self):
+
         result = []
         is_float = False
-        while self.current != '\0' and (self.current.isdigit() or self.current == '.'):
-            if self.current == '.':
-                if is_float:
-                    return Token(Type.UNKNOWN, f"ERROR: Unexpected character {self.current} at line {self.line}")
-                is_float = True
-            result.append(self.current)
+
+ 
+        if self.current.isdigit():
+            while self.current != '\0' and (self.current.isdigit() or self.current == '.'):
+                if self.current == '.':
+                    if is_float:  
+                        return Token(Type.UNKNOWN, f"ERROR: Invalid number format at line {self.line}", self.line)
+                    is_float = True
+                result.append(self.current)
+                self.advance()
+
+            if self.current.isalpha() or self.current == '_':
+                result.append(self.current)
+                token_line = self.line
+                while self.current != '\0' and (self.current.isalnum() or self.current == '_'):
+                    result.append(self.current)
+                    self.advance()
+                invalid_identifier = ''.join(result)
+                return Token(Type.UNKNOWN, f"ERROR: Invalid identifier '{invalid_identifier}' at line {token_line}", token_line)
+
+            num_str = ''.join(result)
+            return Token(Type.RESERVED_WORDS["FLOAT"] if is_float else Type.RESERVED_WORDS["INT"], num_str, self.line)
+
+        elif self.current.isalpha() or self.current == '_':
+            # Collect valid identifier characters
+            while self.current != '\0' and (self.current.isalnum() or self.current == '_'):
+                result.append(self.current)
+                self.advance()
+
+            word = ''.join(result)
+            token_type = self.reserved(word)
+
+            if len(word) > 31:
+                return Token(Type.UNKNOWN, f"ERROR: Identifier '{word}' too long at line {self.line}", self.line)
+
+            return Token(token_type, word, self.line)
+
+        else:
+            unknown_char = self.current
+            token_line = self.line
             self.advance()
-        num_str = ''.join(result)
-        return Token(Type.FLOAT if is_float else Type.INTEGER, num_str, self.line)
+            return Token(Type.UNKNOWN, f"ERROR: Invalid character '{unknown_char}' at line {token_line}", token_line)
+
+    def reserved_token(self, char):
+        return Type.RESERVED_TOKENS.get(char, Type.UNKNOWN)
 
     def proxT(self):
         while self.current != '\0':
             if self.current.isspace():
                 self.space()
                 continue
-            if self.current.isdigit() or (self.current == '.' and self.position + 1 < len(self.input) and self.input[self.position + 1].isdigit()):
-                return self.number()
-            if self.current == '+':
-                token_line = self.line
-                self.advance()
-                return Token(Type.PLUS, "+", token_line)
-            if self.current == '-':
-                token_line = self.line
-                self.advance()
-                return Token(Type.MINUS, "-", token_line)
-            if self.current == '*':
-                token_line = self.line
-                self.advance()
-                return Token(Type.MUL, "*", token_line)
+
+            if self.current.isalnum() or self.current == '_':
+                return self.identifier_or_number()
             
-            if self.current == '/':
+            if self.current in Type.RESERVED_TOKENS:
+                token_type = self.reserved_token(self.current)
                 token_line = self.line
+                value = self.current
                 self.advance()
-                return Token(Type.DIV, "/", token_line)
-            if self.current == '(':
-                token_line = self.line
-                self.advance()
-                return Token(Type.OPEN_PARENTHESES, "(", token_line)
-            if self.current == ')':
-                token_line = self.line
-                self.advance()
-                return Token(Type.CLOSE_PARENTHESES, ")", token_line)
+                return Token(token_type, value, token_line)
 
             unknown_char = self.current
             token_line = self.line
             self.advance()
-            return Token(Type.UNKNOWN, f"ERROR: {unknown_char} at line {token_line}", token_line)
+            return Token(Type.UNKNOWN, f"ERROR: Invalid character '{unknown_char}' at line {token_line}", token_line)
 
         return Token(Type.EOF, "", self.line)
