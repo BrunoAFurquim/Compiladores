@@ -29,6 +29,7 @@ class Type:
         '_': "UNDERSCORE",
         '=': "EQUAL",
         "'": "QUOT_MARKS",
+        ":=": "ASSIGNMENT",
     }
     
     IDENTIFIER = "IDENTIFIER"
@@ -65,7 +66,6 @@ class LexicalAnalyzer:
             self.advance()
 
     def reserved(self, word):
-
         return Type.RESERVED_WORDS.get(word.upper(), Type.IDENTIFIER)
 
     def identifier_or_number(self):
@@ -117,12 +117,24 @@ class LexicalAnalyzer:
 
     def reserved_token(self, char):
         return Type.RESERVED_TOKENS.get(char, Type.UNKNOWN)
+    def peek(self):
+        next_pos = self.position + 1
+        if next_pos < len(self.input):
+            return self.input[next_pos]
+        return '\0'
 
     def proxT(self):
         while self.current != '\0':
             if self.current.isspace():
                 self.space()
                 continue
+
+            # Check for multi-character tokens first
+            if self.current == ':':
+                if self.peek() == '=':
+                    self.advance()  # Advance past ':'
+                    self.advance()  # Advance past '='
+                    return Token(Type.RESERVED_TOKENS[':='], ":=", self.line)
 
             if self.current.isalnum() or self.current == '_':
                 return self.identifier_or_number()
@@ -140,3 +152,4 @@ class LexicalAnalyzer:
             return Token(Type.UNKNOWN, f"ERROR: Invalid character '{unknown_char}' at line {token_line}", token_line)
 
         return Token(Type.EOF, "", self.line)
+    

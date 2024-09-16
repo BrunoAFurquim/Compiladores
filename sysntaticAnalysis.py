@@ -1,59 +1,67 @@
 from lexicalAnalyzer import LexicalAnalyzer, Type
 
-class Syntactic_Analysis:
-    def __init__ (self, tokens):
-        self.tokens = tokens
-        self.pos = 0
+class SyntacticAnalyzer:
+    def __init__(self, lexer):
+        self.lexer = lexer
+        self.current_token = self.lexer.proxT()
+        self.symbol_table = set()
 
-    #See how long is the tokens and if there is <0, there is nothing to do    
-    def current(self):
-        if self.pos < len(self.tokens):
-            return self.tokens[self.pos]
-        return None
-    
-    #To ensure that the quee is not wrong
-    def expected(self, token_type):
-        token = self.current()
-        if token and token[0] == token_type:
-            self.pos +=1
-            return token
+    def eat(self, token_type):
+        if self.current_token.type == token_type:
+            self.current_token = self.lexer.proxT()
         else:
-            return print("expected an operation not a number")
-    
-    # This def define the rules about the Parentheses and the systeshis about the number that are in
-    def factor(self):
-        token = self.current()
-        if token[0] == NUMBER():
-            self.expected(NUMBER)
-            return float(token[1])
-        elif token[0] == LPAREN:
-            self.consume(OPEN_PARENTHESES)
-            result = self.expr()
-            self.expected(CLOSE_PARENTHESES)
-            return result
+            raise SyntaxError(f"Unexpected token: {self.current_token}, expected {token_type}")
+
+    def block(self):
+        if self.current_token.type == Type.RESERVED_WORDS['BEGIN']:
+            self.eat(Type.RESERVED_WORDS['BEGIN'])
+            self.statement()
+            self.eat(Type.RESERVED_WORDS['END'])
+            self.eat(Type.RESERVED_TOKENS[';'])
         else:
-            return SystaxError("Invalid")
+            raise SyntaxError(f"Expected 'BEGIN', found {self.current_token.value}")
 
-    #Work with Div and Mul
-    def term(self):
-        result = self.factor()
-        while self.current() and self.current()[0] in (MUL, DIV):
-            if self.current()[0] == MUL:
-                self.consume(MUL)
-                result *= self.factor()
-            elif self.current()[0] == DIV:
-                self.consume(DIV)
-                result /= self.factor()
-        return result
+    def statement(self):
+        self.variable_declaring()
+        self.variable_assignment()
 
-    # Work with Plus and Minus
-    def expr(self):
-        result = self.term()
-        while self.current() and self.current()[0] in (PLUS, MINUS):
-            if self.current()[0] == PLUS:
-                self.consume(PLUS)
-                result += self.term()
-            elif self.current()[0] == MINUS:
-                self.consume(MINUS)
-                result -= self.term()
-        return result
+    def variable_declaring(self): 
+        self.eat(Type.RESERVED_WORDS['VAR'])
+        var_name = self.current_token.value
+        self.eat(Type.IDENTIFIER)
+
+        if var_name in self.symbol_table:
+            raise SyntaxError(f"Variable '{var_name}' already declared.")
+        
+        self.symbol_table.add(var_name)
+        self.eat(Type.RESERVED_TOKENS[";"])
+
+    def variable_assignment(self):
+        var_name = self.current_token.value
+
+        if var_name not in self.symbol_table:
+            raise SyntaxError(f"Variable '{var_name}' not declared before use.")
+        
+        self.eat(Type.IDENTIFIER)
+        self.eat(Type.RESERVED_TOKENS[':=']) 
+        
+        if self.current_token.type in [Type.RESERVED_WORDS['INT'], Type.RESERVED_WORDS['FLOAT'], Type.IDENTIFIER]:
+            self.eat(self.current_token.type)
+        else:
+            raise SyntaxError(f"Unexpected token in expression: {self.current_token}")
+        self.eat(Type.RESERVED_TOKENS[";"])
+
+# Example usage
+input_text = """
+    BEGIN
+        var x;
+        y := 10;
+    END;
+"""
+lexer = LexicalAnalyzer(input_text)
+parser = SyntacticAnalyzer(lexer)
+try:
+    parser.block()
+    print("Bloco e atribuição de variável reconhecidos com sucesso.")
+except SyntaxError as e:
+    print(f"Erro de sintaxe: {e}")
