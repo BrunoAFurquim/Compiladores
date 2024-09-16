@@ -64,33 +64,57 @@ class LexicalAnalyzer:
             self.advance()
 
     def reserved(self, word):
-        # Check if the word is in reserved words dictionary
+
         return Type.RESERVED_WORDS.get(word.upper(), Type.IDENTIFIER)
 
-    def identifier(self):
-        result = []
-        while self.current != '\0' and (self.current.isalnum() or self.current == '_'):
-            result.append(self.current)
-            self.advance()
-        word = ''.join(result)
-        token_type = self.reserved(word)  # Check if it's a reserved word
-        return Token(token_type, word, self.line)
+    def identifier_or_number(self):
 
-    def number(self):
         result = []
         is_float = False
-        while self.current != '\0' and (self.current.isdigit() or self.current == '.'):
-            if self.current == '.':
-                if is_float:
-                    return Token(Type.UNKNOWN, f"ERROR: Unexpected character {self.current} at line {self.line}")
-                is_float = True
-            result.append(self.current)
+
+ 
+        if self.current.isdigit():
+            while self.current != '\0' and (self.current.isdigit() or self.current == '.'):
+                if self.current == '.':
+                    if is_float:  
+                        return Token(Type.UNKNOWN, f"ERROR: Invalid number format at line {self.line}", self.line)
+                    is_float = True
+                result.append(self.current)
+                self.advance()
+
+            if self.current.isalpha() or self.current == '_':
+                result.append(self.current)
+                token_line = self.line
+                while self.current != '\0' and (self.current.isalnum() or self.current == '_'):
+                    result.append(self.current)
+                    self.advance()
+                invalid_identifier = ''.join(result)
+                return Token(Type.UNKNOWN, f"ERROR: Invalid identifier '{invalid_identifier}' at line {token_line}", token_line)
+
+            num_str = ''.join(result)
+            return Token(Type.RESERVED_WORDS["FLOAT"] if is_float else Type.RESERVED_WORDS["INT"], num_str, self.line)
+
+        elif self.current.isalpha() or self.current == '_':
+            # Collect valid identifier characters
+            while self.current != '\0' and (self.current.isalnum() or self.current == '_'):
+                result.append(self.current)
+                self.advance()
+
+            word = ''.join(result)
+            token_type = self.reserved(word)
+
+            if len(word) > 31:
+                return Token(Type.UNKNOWN, f"ERROR: Identifier '{word}' too long at line {self.line}", self.line)
+
+            return Token(token_type, word, self.line)
+
+        else:
+            unknown_char = self.current
+            token_line = self.line
             self.advance()
-        num_str = ''.join(result)
-        return Token(Type.FLOAT if is_float else Type.INTEGER, num_str, self.line)
+            return Token(Type.UNKNOWN, f"ERROR: Invalid character '{unknown_char}' at line {token_line}", token_line)
 
     def reserved_token(self, char):
-        # Check if the character is in reserved tokens dictionary
         return Type.RESERVED_TOKENS.get(char, Type.UNKNOWN)
 
     def proxT(self):
@@ -99,15 +123,9 @@ class LexicalAnalyzer:
                 self.space()
                 continue
 
-            # Handle numbers
-            if self.current.isdigit() or (self.current == '.' and self.position + 1 < len(self.input) and self.input[self.position + 1].isdigit()):
-                return self.number()
-
-            # Handle identifiers and reserved words
-            if self.current.isalpha() or self.current == '_':
-                return self.identifier()
-
-            # Handle reserved tokens
+            if self.current.isalnum() or self.current == '_':
+                return self.identifier_or_number()
+            
             if self.current in Type.RESERVED_TOKENS:
                 token_type = self.reserved_token(self.current)
                 token_line = self.line
@@ -115,10 +133,9 @@ class LexicalAnalyzer:
                 self.advance()
                 return Token(token_type, value, token_line)
 
-            # Handle unknown characters
             unknown_char = self.current
             token_line = self.line
             self.advance()
-            return Token(Type.UNKNOWN, f"ERROR: {unknown_char} at line {token_line}", token_line)
+            return Token(Type.UNKNOWN, f"ERROR: Invalid character '{unknown_char}' at line {token_line}", token_line)
 
         return Token(Type.EOF, "", self.line)
