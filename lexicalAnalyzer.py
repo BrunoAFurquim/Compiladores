@@ -28,6 +28,7 @@ class Type:
         '/': "DIV",
         '_': "UNDERSCORE",
         '=': "EQUAL",
+        "'": "QUOT_MARKS",
     }
     
     IDENTIFIER = "IDENTIFIER"
