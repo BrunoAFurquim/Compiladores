@@ -1,3 +1,4 @@
+# syntactic_analyzer.py
 from lexicalAnalyzer import LexicalAnalyzer, Type
 
 class SyntacticAnalyzer:
@@ -50,18 +51,3 @@ class SyntacticAnalyzer:
         else:
             raise SyntaxError(f"Unexpected token in expression: {self.current_token}")
         self.eat(Type.RESERVED_TOKENS[";"])
-
-# Example usage
-input_text = """
-    BEGIN
-        var x;
-        y := 10;
-    END;
-"""
-lexer = LexicalAnalyzer(input_text)
-parser = SyntacticAnalyzer(lexer)
-try:
-    parser.block()
-    print("Bloco e atribuição de variável reconhecidos com sucesso.")
-except SyntaxError as e:
-    print(f"Erro de sintaxe: {e}")
