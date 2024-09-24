@@ -1,12 +1,14 @@
+# interface.py
 import tkinter as tk
 from tkinter import filedialog, messagebox
+from lexicalAnalyzer import LexicalAnalyzer, Type  # Ensure this is at the top
+from sysntaticAnalysis import SyntacticAnalyzer  # Import SyntacticAnalyzer
 
 class Interface:
     def __init__(self, process_input_callback):
         self.process_input_callback = process_input_callback
         self.root = tk.Tk()
         self.root.title("Lexical Analyzer")
-
         self.root.attributes('-fullscreen', True)
 
         self.menu_bar = tk.Menu(self.root)
@@ -28,8 +30,6 @@ class Interface:
         self.right_text.tag_configure("warning", foreground="yellow")
 
         self.left_text.bind("<KeyRelease>", self.update_line_numbers)
-
-        # Armazena a expressão original para exportação
         self.original_expression = ""
 
     def open_file(self):
@@ -49,6 +49,16 @@ class Interface:
             tokens = self.process_input_callback(self.original_expression)
             self.right_text.delete(1.0, tk.END)
             self.display_tokens(tokens)
+            self.run_syntactic_analysis()
+
+    def run_syntactic_analysis(self):
+        lexer = LexicalAnalyzer(self.original_expression)
+        parser = SyntacticAnalyzer(lexer)
+        try:
+            parser.block()
+            self.right_text.insert(tk.END, "\nSyntactic analysis: Success", "success")
+        except SyntaxError as e:
+            self.right_text.insert(tk.END, f"\nSyntactic analysis ERROR: {e}", "error")
 
     def display_tokens(self, tokens):
         for token in tokens:
@@ -58,15 +68,12 @@ class Interface:
                 tag = "warning"
             else:
                 tag = None
-
             self.right_text.insert(tk.END, f"{token}\n", tag)
 
     def update_line_numbers(self, event=None):
         self.line_numbers.config(state='normal')
         self.line_numbers.delete(1.0, tk.END)
-
         line_count = int(self.left_text.index('end-1c').split('.')[0])
-
         line_number_string = "\n".join(str(i) for i in range(1, line_count + 1))
         self.line_numbers.insert(1.0, line_number_string)
         self.line_numbers.config(state='disabled')
@@ -80,7 +87,6 @@ class Interface:
                 filetypes=[("Text Files", "*.txt")],
                 title="Save tokens as"
             )
-            
             if file_path:  
                 with open(file_path, 'w') as file:
                     file.write("Original Expression:\n")
