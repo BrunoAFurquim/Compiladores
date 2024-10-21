@@ -30,6 +30,12 @@ class Type:
         '=': "EQUAL",
         "'": "QUOT_MARKS",
         ":=": "ASSIGNMENT",
+        "<": "LESS THAN",
+        ">": "MORE THAN",
+        "<=": "LESS THAN OR EQUAL TO",
+        ">=": "MORE THAN OR EQUAL TO"
+
+
     }
     
     IDENTIFIER = "IDENTIFIER"

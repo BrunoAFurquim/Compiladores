@@ -1,0 +1,9 @@
+begin 
+
+var x;
+x := 9;
+IF x > 10 THEN
+    y := 20;
+ELSE
+    y := 30;
+end;
