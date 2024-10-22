@@ -1,8 +1,5 @@
 class Type:
     RESERVED_WORDS = {
-        "INT": "INT",
-        "FLOAT": "FLOAT",
-        "PROGRAM": "PROGRAM",
         "PROCEDURE": "PROCEDURE",
         "VAR": "VAR",
         "BEGIN": "BEGIN",
@@ -12,6 +9,14 @@ class Type:
         "ELSE": "ELSE",
         "WHILE": "WHILE",
         "DO": "DO",
+        "FUNCTION": "FUNCTION",
+    }
+    
+    RESERVED_TYPES = {
+        "INT": "INT",
+        "FLOAT": "FLOAT",
+        "CHAR": "CHAR",
+        "BOOLEAN": "BOOLEAN"
     }
     
     RESERVED_TOKENS = {
@@ -26,12 +31,12 @@ class Type:
         '-': "MINUS",
         '*': "MUL",
         '/': "DIV",
-        '_': "UNDERSCORE",
-        '=': "EQUAL",
+        "_": "UNDERSCORE",
+        "=": "EQUAL",
         "'": "QUOT_MARKS",
         ":=": "ASSIGNMENT",
     }
-    
+ 
     IDENTIFIER = "IDENTIFIER"
     EOF = "EOF"
     UNKNOWN = "UNKNOWN"
@@ -69,7 +74,6 @@ class LexicalAnalyzer:
         return Type.RESERVED_WORDS.get(word.upper(), Type.IDENTIFIER)
 
     def identifier_or_number(self):
-
         result = []
         is_float = False
 

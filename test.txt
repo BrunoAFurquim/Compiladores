@@ -1,0 +1,7 @@
+begin
+var x;
+var y;
+x := 4;
+y := 10;
+
+end;
