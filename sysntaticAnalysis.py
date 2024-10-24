@@ -5,9 +5,8 @@ class SyntacticAnalyzer:
     def __init__(self, lexer):
         self.lexer = lexer
         self.current_token = self.lexer.proxT()
-        self.symbol_table = set()  # Store (var_name, var_type) as tuples
+        self.symbol_table = set()
 
-    # Consumes the current token if it matches the expected token_type
     def eat(self, token_type):
         if self.current_token.type == token_type:
             self.current_token = self.lexer.proxT()
@@ -78,13 +77,13 @@ class SyntacticAnalyzer:
         if var_name not in [var[0] for var in self.symbol_table]:
             raise SyntaxError(f"Variable '{var_name}' not declared before use.")
 
-        self.eat(Type.IDENTIFIER)  # Consome o identificador
-        self.eat(Type.RESERVED_TOKENS[':='])  # Consome o operador de atribuição (:=)
+        self.eat(Type.IDENTIFIER)  
+        self.eat(Type.RESERVED_TOKENS[':=']) 
 
-        self.expression()  # Avalia a expressão
+        self.expression() 
 
-        if self.current_token.type == Type.RESERVED_TOKENS[';']:  # Verifica se o próximo token é um ';'
-            self.eat(Type.RESERVED_TOKENS[';'])  # Consome o ponto e vírgula
+        if self.current_token.type == Type.RESERVED_TOKENS[';']: 
+            self.eat(Type.RESERVED_TOKENS[';']) 
         else:
             raise SyntaxError(f"Expected ';' at the end of assignment at line {self.current_token.position}.")
 

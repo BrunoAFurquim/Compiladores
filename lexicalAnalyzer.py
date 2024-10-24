@@ -92,7 +92,6 @@ class LexicalAnalyzer:
             return Token(Type.RESERVED_TYPES["FLOAT"] if is_float else Type.RESERVED_TYPES["INT"], num_str, self.line)
 
         elif self.current.isalpha() or self.current == '_':
-            # Collect valid identifier characters
             while self.current != '\0' and (self.current.isalnum() or self.current == '_'):
                 result.append(self.current)
                 self.advance()
@@ -115,16 +114,13 @@ class LexicalAnalyzer:
         return Type.RESERVED_TOKENS.get(char, Type.UNKNOWN)
     
     def peek(self):
-        # Salva o estado atual
         original_position = self.position
         original_current = self.current
         original_line = self.line
     
-        # Avança para obter o próximo token
         self.advance()
         token = self.proxT()
     
-        # Restaura o estado original
         self.position = original_position
         self.current = original_current
         self.line = original_line
@@ -137,11 +133,10 @@ class LexicalAnalyzer:
                 self.space()
                 continue
             
-            # Check for multi-character tokens first
             if self.current == ':':
                 if self.peek().value == '=':
-                    self.advance()  # Advance past ':'
-                    self.advance()  # Advance past '='
+                    self.advance() 
+                    self.advance()
                     return Token(Type.RESERVED_TOKENS[':='], ":=", self.line)
     
             if self.current.isalnum() or self.current == '_':
