@@ -1,8 +1,5 @@
 class Type:
     RESERVED_WORDS = {
-        "INT": "INT",
-        "FLOAT": "FLOAT",
-        "PROGRAM": "PROGRAM",
         "PROCEDURE": "PROCEDURE",
         "VAR": "VAR",
         "BEGIN": "BEGIN",
@@ -12,6 +9,14 @@ class Type:
         "ELSE": "ELSE",
         "WHILE": "WHILE",
         "DO": "DO",
+        "TRUE": "TRUE",
+        "FALSE": "FALSE",
+    }
+    
+    RESERVED_TYPES = {
+        "INT": "INT",
+        "FLOAT": "FLOAT",
+        "BOOLEAN": "BOOLEAN"
     }
     
     RESERVED_TOKENS = {
@@ -26,12 +31,14 @@ class Type:
         '-': "MINUS",
         '*': "MUL",
         '/': "DIV",
-        '_': "UNDERSCORE",
-        '=': "EQUAL",
+        "_": "UNDERSCORE",
+        "=": "EQUAL",
         "'": "QUOT_MARKS",
         ":=": "ASSIGNMENT",
+        ">": "HIGHER",
+        "<": "LOWER"
     }
-    
+ 
     IDENTIFIER = "IDENTIFIER"
     EOF = "EOF"
     UNKNOWN = "UNKNOWN"
@@ -69,34 +76,22 @@ class LexicalAnalyzer:
         return Type.RESERVED_WORDS.get(word.upper(), Type.IDENTIFIER)
 
     def identifier_or_number(self):
-
         result = []
         is_float = False
 
- 
         if self.current.isdigit():
             while self.current != '\0' and (self.current.isdigit() or self.current == '.'):
                 if self.current == '.':
-                    if is_float:  
+                    if is_float:
                         return Token(Type.UNKNOWN, f"ERROR: Invalid number format at line {self.line}", self.line)
                     is_float = True
                 result.append(self.current)
                 self.advance()
 
-            if self.current.isalpha() or self.current == '_':
-                result.append(self.current)
-                token_line = self.line
-                while self.current != '\0' and (self.current.isalnum() or self.current == '_'):
-                    result.append(self.current)
-                    self.advance()
-                invalid_identifier = ''.join(result)
-                return Token(Type.UNKNOWN, f"ERROR: Invalid identifier '{invalid_identifier}' at line {token_line}", token_line)
-
             num_str = ''.join(result)
-            return Token(Type.RESERVED_WORDS["FLOAT"] if is_float else Type.RESERVED_WORDS["INT"], num_str, self.line)
+            return Token(Type.RESERVED_TYPES["FLOAT"] if is_float else Type.RESERVED_TYPES["INT"], num_str, self.line)
 
         elif self.current.isalpha() or self.current == '_':
-            # Collect valid identifier characters
             while self.current != '\0' and (self.current.isalnum() or self.current == '_'):
                 result.append(self.current)
                 self.advance()
@@ -114,42 +109,47 @@ class LexicalAnalyzer:
             token_line = self.line
             self.advance()
             return Token(Type.UNKNOWN, f"ERROR: Invalid character '{unknown_char}' at line {token_line}", token_line)
-
+    
     def reserved_token(self, char):
         return Type.RESERVED_TOKENS.get(char, Type.UNKNOWN)
+    
     def peek(self):
-        next_pos = self.position + 1
-        if next_pos < len(self.input):
-            return self.input[next_pos]
-        return '\0'
-
+        original_position = self.position
+        original_current = self.current
+        original_line = self.line
+    
+        self.advance()
+        token = self.proxT()
+    
+        self.position = original_position
+        self.current = original_current
+        self.line = original_line
+    
+        return token
+    
     def proxT(self):
         while self.current != '\0':
             if self.current.isspace():
                 self.space()
                 continue
-
-            # Check for multi-character tokens first
+            
             if self.current == ':':
-                if self.peek() == '=':
-                    self.advance()  # Advance past ':'
-                    self.advance()  # Advance past '='
+                if self.peek().value == '=':
+                    self.advance() 
+                    self.advance()
                     return Token(Type.RESERVED_TOKENS[':='], ":=", self.line)
-
+    
             if self.current.isalnum() or self.current == '_':
                 return self.identifier_or_number()
-            
+    
             if self.current in Type.RESERVED_TOKENS:
                 token_type = self.reserved_token(self.current)
-                token_line = self.line
                 value = self.current
                 self.advance()
-                return Token(token_type, value, token_line)
-
-            unknown_char = self.current
-            token_line = self.line
-            self.advance()
-            return Token(Type.UNKNOWN, f"ERROR: Invalid character '{unknown_char}' at line {token_line}", token_line)
-
-        return Token(Type.EOF, "", self.line)
+                return Token(token_type, value, self.line)
     
+            unknown_char = self.current
+            self.advance()
+            return Token(Type.UNKNOWN, f"ERROR: Invalid character '{unknown_char}' at line {self.line}", self.line)
+    
+        return Token(Type.EOF, "", self.line)

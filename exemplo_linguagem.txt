@@ -1,0 +1,33 @@
+program ExemploLALG;
+
+var
+  a, b, resultado: int;
+  condicao: boolean;
+
+procedure soma(x, y: int; var res: int);
+begin
+  res := x + y;
+end;
+
+procedure imprimirValor(valor: int);
+begin
+  write(valor);
+end;
+
+begin
+  a := 10;
+  b := 20;
+  
+  if a < b then
+    condicao := true
+  else
+    condicao := false;
+
+  if condicao then
+  begin
+    soma(a, b, resultado);
+    imprimirValor(resultado);
+  end
+  else
+    write(0);
+end.
