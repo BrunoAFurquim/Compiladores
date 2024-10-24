@@ -1,5 +1,6 @@
 class Type:
     RESERVED_WORDS = {
+        "PROGRAM": "PROGRAM",
         "PROCEDURE": "PROCEDURE",
         "VAR": "VAR",
         "BEGIN": "BEGIN",

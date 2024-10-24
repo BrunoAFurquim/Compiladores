@@ -1,8 +1,8 @@
 # interface.py
 import tkinter as tk
 from tkinter import filedialog, messagebox
-from lexicalAnalyzer import LexicalAnalyzer, Type  # Ensure this is at the top
-from sysntaticAnalysis import SyntacticAnalyzer  # Import SyntacticAnalyzer
+from lexicalAnalyzer import LexicalAnalyzer, Type  
+from sysntaticAnalysis import SyntacticAnalyzer 
 
 class Interface:
     def __init__(self, process_input_callback):
@@ -55,7 +55,7 @@ class Interface:
         lexer = LexicalAnalyzer(self.original_expression)
         parser = SyntacticAnalyzer(lexer)
         try:
-            parser.block()
+            parser.program_declaration()
             self.right_text.insert(tk.END, "\nSyntactic analysis: Success", "success")
         except SyntaxError as e:
             self.right_text.insert(tk.END, f"\nSyntactic analysis ERROR: {e}", "error")
