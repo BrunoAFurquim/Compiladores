@@ -1,5 +1,6 @@
 class Type:
     RESERVED_WORDS = {
+        "PROGRAM": "PROGRAM",
         "PROCEDURE": "PROCEDURE",
         "VAR": "VAR",
         "BEGIN": "BEGIN",
@@ -36,7 +37,8 @@ class Type:
         "'": "QUOT_MARKS",
         ":=": "ASSIGNMENT",
         ">": "HIGHER",
-        "<": "LOWER"
+        "<": "LOWER",
+        ".": "DOT",
     }
  
     IDENTIFIER = "IDENTIFIER"
