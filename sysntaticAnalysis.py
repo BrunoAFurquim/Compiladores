@@ -14,16 +14,13 @@ class SyntacticAnalyzer:
             raise SyntaxError(f"Unexpected token: {self.current_token}, expected {token_type}")
 
     def program_declaration(self):
-        # Verifica se a palavra-chave 'PROGRAM' está presente
         if self.current_token.type == Type.RESERVED_WORDS['PROGRAM']:
             self.eat(Type.RESERVED_WORDS['PROGRAM'])
 
-            # Verifica se há um identificador após 'PROGRAM'
             if self.current_token.type == Type.IDENTIFIER:
                 program_name = self.current_token.value
                 self.eat(Type.IDENTIFIER)
 
-                # Verifica se há um ponto e vírgula ';' após o nome do programa
                 if self.current_token.type == Type.RESERVED_TOKENS[';']:
                     self.eat(Type.RESERVED_TOKENS[';'])
                 else:
@@ -33,17 +30,15 @@ class SyntacticAnalyzer:
         else:
             raise SyntaxError(f"Expected 'PROGRAM', found {self.current_token.value}")
 
-        # Verifica o token seguinte para identificar qual parte do programa está começando
         while self.current_token.type in (Type.RESERVED_WORDS['VAR'], Type.RESERVED_WORDS['PROCEDURE'], Type.RESERVED_WORDS['BEGIN']):
             if self.current_token.type == Type.RESERVED_WORDS['VAR']:
-                self.variable_declaring()  # Chama a regra de declaração de variáveis
+                self.variable_declaring() 
             elif self.current_token.type == Type.RESERVED_WORDS['PROCEDURE']:
-                self.procedure_declaration()  # Chama a regra de declaração de procedimento
+                self.procedure_declaration() 
             elif self.current_token.type == Type.RESERVED_WORDS['BEGIN']:
-                self.block()  # Chama a regra do bloco de comandos
-                break  # 'BEGIN' inicia o bloco de comandos, então paramos de procurar outras declarações
+                self.block()  
+                break  
 
-        # Verifica se o programa termina com 'END.'
         if self.current_token.type == Type.RESERVED_WORDS['END']:
             self.eat(Type.RESERVED_WORDS['END'])
 
@@ -92,7 +87,6 @@ class SyntacticAnalyzer:
         self.eat(Type.RESERVED_WORDS['VAR'])
         var_names = []
         
-        # Collect variable names
         while True:
             var_name = self.current_token.value
             self.eat(Type.IDENTIFIER)
@@ -104,7 +98,6 @@ class SyntacticAnalyzer:
             else:
                 break
         
-        # Read variable type
         self.eat(Type.RESERVED_TOKENS[':'])
         var_type = self.current_token.value
         if var_type.upper() not in Type.RESERVED_TYPES:
@@ -135,10 +128,9 @@ class SyntacticAnalyzer:
         print(f"Procedure call detected for '{self.current_token.value}'")
         self.eat(Type.IDENTIFIER)
 
-        # Verifica se os parâmetros são passados corretamente
         self.eat(Type.RESERVED_TOKENS['('])
         while self.current_token.type != Type.RESERVED_TOKENS[')']:
-            self.expression()  # Avalia os parâmetros como expressões
+            self.expression()
             if self.current_token.type == Type.RESERVED_TOKENS[',']:
                 self.eat(Type.RESERVED_TOKENS[','])
         self.eat(Type.RESERVED_TOKENS[')'])
@@ -151,20 +143,11 @@ class SyntacticAnalyzer:
             raise SyntaxError(f"Unexpected token in expression: {self.current_token}")
 
     def conditional_statement(self):
-        # Verifica se o token atual é 'IF'
         if self.current_token.type == Type.RESERVED_WORDS['IF']:
             self.eat(Type.RESERVED_WORDS['IF'])
-            
-            # Avalia a condição da expressão
             self.expression()
-            
-            # Verifica se o próximo token é 'THEN'
             self.eat(Type.RESERVED_WORDS['THEN'])
-            
-            # Executa a instrução dentro do bloco do IF
             self.statement()
-            
-            # Verifica a existência do ELSE opcional
             if self.current_token.type == Type.RESERVED_WORDS['ELSE']:
                 self.eat(Type.RESERVED_WORDS['ELSE'])
                 self.statement()
@@ -173,12 +156,10 @@ class SyntacticAnalyzer:
         if self.current_token.type == Type.RESERVED_WORDS['PROCEDURE']:
             self.eat(Type.RESERVED_WORDS['PROCEDURE'])
             
-            # Verifica se o próximo token é um identificador (nome do procedimento)
             procedure_name = self.current_token.value
             print(f"Procedure name: {procedure_name}")
             self.eat(Type.IDENTIFIER)
             
-            # Verifica se há parâmetros entre parênteses
             self.eat(Type.RESERVED_TOKENS['('])
             while self.current_token.type != Type.RESERVED_TOKENS[')']:
                 param_name = self.current_token.value
@@ -191,20 +172,17 @@ class SyntacticAnalyzer:
             self.eat(Type.RESERVED_TOKENS[')'])
             self.eat(Type.RESERVED_TOKENS[';'])
             
-            # Bloco de início do procedimento
             self.block()
         else:
             raise SyntaxError(f"Expected 'PROCEDURE' keyword, found {self.current_token.value}")
 
     def analyze(self):
-        self.program_declaration()  # Reconhece a estrutura program <identificador>;
+        self.program_declaration() 
         
-        # Processa declarações de variáveis e procedimentos
         while self.current_token.type in [Type.RESERVED_WORDS['VAR'], Type.RESERVED_WORDS['PROCEDURE']]:
             if self.current_token.type == Type.RESERVED_WORDS['VAR']:
                 self.variable_declaring()
             elif self.current_token.type == Type.RESERVED_WORDS['PROCEDURE']:
                 self.procedure_declaration()
 
-        # Agora processa o bloco principal do programa
         self.block()

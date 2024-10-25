@@ -37,7 +37,8 @@ class Type:
         "'": "QUOT_MARKS",
         ":=": "ASSIGNMENT",
         ">": "HIGHER",
-        "<": "LOWER"
+        "<": "LOWER",
+        ".": "DOT",
     }
  
     IDENTIFIER = "IDENTIFIER"
