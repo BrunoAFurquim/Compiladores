@@ -12,6 +12,8 @@ class Type:
         "DO": "DO",
         "TRUE": "TRUE",
         "FALSE": "FALSE",
+        "FOR": "FOR",
+        "RETURN": "RETURN",
     }
     
     RESERVED_TYPES = {
@@ -39,6 +41,10 @@ class Type:
         ">": "HIGHER",
         "<": "LOWER",
         ".": "DOT",
+        "!=": "NOT_EQUAL",
+        "<=": "LESS_EQUAL",
+        ">=": "HIGH_EQUAL",
+        "==": "COMPARISON"
     }
  
     IDENTIFIER = "IDENTIFIER"

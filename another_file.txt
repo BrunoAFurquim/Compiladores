@@ -1,4 +1,0 @@
-BEGIN
-    var y;
-    y := 10;
-END;

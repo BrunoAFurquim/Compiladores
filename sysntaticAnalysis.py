@@ -145,12 +145,36 @@ class SyntacticAnalyzer:
     def conditional_statement(self):
         if self.current_token.type == Type.RESERVED_WORDS['IF']:
             self.eat(Type.RESERVED_WORDS['IF'])
-            self.expression()
+            self.boolean_expression()
             self.eat(Type.RESERVED_WORDS['THEN'])
             self.statement()
             if self.current_token.type == Type.RESERVED_WORDS['ELSE']:
                 self.eat(Type.RESERVED_WORDS['ELSE'])
                 self.statement()
+
+    def boolean_expression(self):
+        self.term() 
+        while self.current_token.type in [Type.RESERVED_TOKENS['<'], Type.RESERVED_TOKENS['>'], Type.RESERVED_TOKENS['<='], Type.RESERVED_TOKENS['>='], Type.RESERVED_TOKENS['=='], Type.RESERVED_TOKENS['!=']]:
+            op = self.current_token.type
+            self.eat(op)
+            self.term() 
+
+    def term(self):
+        self.factor()
+        while self.current_token.type in [Type.RESERVED_TOKENS['+'], Type.RESERVED_TOKENS['-']]:
+            op = self.current_token.type
+            self.eat(op)
+            self.factor()
+
+    def factor(self):
+        if self.current_token.type in [Type.IDENTIFIER, Type.RESERVED_TYPES['INT'], Type.RESERVED_TYPES['FLOAT']]:
+            self.eat(self.current_token.type)
+        elif self.current_token.type == Type.RESERVED_TOKENS['(']:
+            self.eat(Type.RESERVED_TOKENS['('])
+            self.boolean_expression()
+            self.eat(Type.RESERVED_TOKENS[')'])
+        else:
+            raise SyntaxError(f"Unexpected token in factor: {self.current_token}")
 
     def procedure_declaration(self):
         if self.current_token.type == Type.RESERVED_WORDS['PROCEDURE']:
