@@ -48,6 +48,7 @@ class Type:
         "<=": "LESS_EQUAL",
         ">=": "HIGH_EQUAL",
         "==": "COMPARISON"
+        
     }
  
     IDENTIFIER = "IDENTIFIER"
