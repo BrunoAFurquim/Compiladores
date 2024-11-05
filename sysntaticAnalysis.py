@@ -159,6 +159,11 @@ class SyntacticAnalyzer:
             self.eat(op)
             self.term() 
 
+    #def read_expression(self):
+    #def proc_expression(self):
+    #def write_expression(self):
+     
+
     def term(self):
         self.factor()
         while self.current_token.type in [Type.RESERVED_TOKENS['+'], Type.RESERVED_TOKENS['-']]:

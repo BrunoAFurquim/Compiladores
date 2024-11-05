@@ -14,6 +14,9 @@ class Type:
         "FALSE": "FALSE",
         "FOR": "FOR",
         "RETURN": "RETURN",
+        "READ": "READ",
+        "PROC": "PROC",
+        "WRITE": "WRITE",
     }
     
     RESERVED_TYPES = {
