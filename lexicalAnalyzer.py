@@ -144,24 +144,33 @@ class LexicalAnalyzer:
             if self.current.isspace():
                 self.space()
                 continue
-            
+
             if self.current == ':':
                 if self.peek().value == '=':
                     self.advance() 
                     self.advance()
                     return Token(Type.RESERVED_TOKENS[':='], ":=", self.line)
-    
+                    
+            # Verificação para tokens de dois caracteres
+            if self.current in ('!', '<', '>', '='):
+                next_char = self.peek()
+                compound_operator = self.current + next_char.value
+                if compound_operator in Type.RESERVED_TOKENS:
+                    self.advance()
+                    self.advance()
+                    return Token(Type.RESERVED_TOKENS[compound_operator], compound_operator, self.line)
+
             if self.current.isalnum() or self.current == '_':
                 return self.identifier_or_number()
-    
+
             if self.current in Type.RESERVED_TOKENS:
                 token_type = self.reserved_token(self.current)
                 value = self.current
                 self.advance()
                 return Token(token_type, value, self.line)
-    
+
             unknown_char = self.current
             self.advance()
             return Token(Type.UNKNOWN, f"ERROR: Invalid character '{unknown_char}' at line {self.line}", self.line)
-    
+
         return Token(Type.EOF, "", self.line)
