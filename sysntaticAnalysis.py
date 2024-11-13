@@ -80,8 +80,64 @@ class SyntacticAnalyzer:
                     raise SyntaxError(f"Unexpected token after identifier: {next_token}")
             else:
                 raise SyntaxError(f"Expected a Token object but got {type(next_token).__name__}")
+        elif self.current_token.type == Type.RESERVED_WORDS['READ']:
+            self.read_expression()
+        elif self.current_token.type == Type.RESERVED_WORDS['WRITE']:
+            self.write_expression()
+        elif self.current_token.type == Type.RESERVED_WORDS['PROC']:
+            self.proc_expression()
         else:
             raise SyntaxError(f"Unexpected token in statement: {self.current_token}")
+
+    def read_expression(self):
+        self.eat(Type.RESERVED_WORDS['READ'])
+        self.eat(Type.RESERVED_TOKENS['('])
+        
+        while self.current_token.type != Type.RESERVED_TOKENS[')']:
+            if self.current_token.type == Type.IDENTIFIER:
+                var_name = self.current_token.value
+                if var_name not in [var[0] for var in self.symbol_table]:
+                    raise SyntaxError(f"Variable '{var_name}' not declared before use.")
+                self.eat(Type.IDENTIFIER)
+                
+                if self.current_token.type == Type.RESERVED_TOKENS[',']:
+                    self.eat(Type.RESERVED_TOKENS[','])
+            else:
+                raise SyntaxError(f"Expected identifier in READ statement, found {self.current_token.value}")
+        
+        self.eat(Type.RESERVED_TOKENS[')'])
+        self.eat(Type.RESERVED_TOKENS[';'])
+
+    def write_expression(self):
+        self.eat(Type.RESERVED_WORDS['WRITE'])
+        self.eat(Type.RESERVED_TOKENS['('])
+
+        while self.current_token.type != Type.RESERVED_TOKENS[')']:
+            self.expression()  # Escreve a expressão ou variável que queremos exibir
+            if self.current_token.type == Type.RESERVED_TOKENS[',']:
+                self.eat(Type.RESERVED_TOKENS[','])
+
+        self.eat(Type.RESERVED_TOKENS[')'])
+        self.eat(Type.RESERVED_TOKENS[';'])
+
+    def proc_expression(self):
+        self.eat(Type.RESERVED_WORDS['PROC'])
+        
+        procedure_name = self.current_token.value
+        if procedure_name not in [proc[0] for proc in self.symbol_table if proc[1] == 'PROC']:
+            raise SyntaxError(f"Procedure '{procedure_name}' not declared before use.")
+        
+        self.eat(Type.IDENTIFIER)
+        self.eat(Type.RESERVED_TOKENS['('])
+
+        while self.current_token.type != Type.RESERVED_TOKENS[')']:
+            self.expression()
+            if self.current_token.type == Type.RESERVED_TOKENS[',']:
+                self.eat(Type.RESERVED_TOKENS[','])
+
+        self.eat(Type.RESERVED_TOKENS[')'])
+        self.eat(Type.RESERVED_TOKENS[';'])
+
 
     def variable_declaring(self):
         self.eat(Type.RESERVED_WORDS['VAR'])
