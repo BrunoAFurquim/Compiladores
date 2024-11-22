@@ -343,27 +343,42 @@ class SyntacticAnalyzer:
     def procedure_declaration(self):
         if self.current_token.type == Type.RESERVED_WORDS['PROCEDURE']:
             self.eat(Type.RESERVED_WORDS['PROCEDURE'])
-            
+
             procedure_name = self.current_token.value
             self.eat(Type.IDENTIFIER)
-            
+
             self.eat(Type.RESERVED_TOKENS['('])
+            param_list = []
+    
             while self.current_token.type != Type.RESERVED_TOKENS[')']:
                 param_name = self.current_token.value
                 self.eat(Type.IDENTIFIER)
                 self.eat(Type.RESERVED_TOKENS[':'])
-                param_type = self.current_token.value
+                param_type = self.current_token.value.upper()
+
+                if param_type not in Type.RESERVED_TYPES:
+                    raise SyntaxError(f"Invalid parameter type '{param_type}' for procedure '{procedure_name}' at line {self.current_token.position}.")
+
                 self.eat(Type.IDENTIFIER)
+                param_list.append((param_name, param_type))
+
                 if self.current_token.type == Type.RESERVED_TOKENS[',']:
                     self.eat(Type.RESERVED_TOKENS[','])
+
             self.eat(Type.RESERVED_TOKENS[')'])
             self.eat(Type.RESERVED_TOKENS[';'])
             
             self.push_scope()
+
+            for param_name, param_type in param_list:
+                self.declare_variable(param_name, param_type)
+
             self.block()
+
             self.pop_scope()
         else:
             raise SyntaxError(f"Expected 'PROCEDURE' keyword, found {self.current_token.value}")
+
 
 
     def analyze(self):
