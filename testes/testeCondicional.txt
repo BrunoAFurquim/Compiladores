@@ -1,0 +1,15 @@
+program SimpleIf;
+var x, y, z: int;
+
+begin
+    x := 5;
+    y := 10;
+    z := 15;
+
+    if x < y then
+        if y < z then
+            x := z;
+        else
+            y := x;
+end;
+end.
