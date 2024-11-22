@@ -5,13 +5,35 @@ class SyntacticAnalyzer:
     def __init__(self, lexer):
         self.lexer = lexer
         self.current_token = self.lexer.proxT()
-        self.symbol_table = set()
+        self.symbol_table = []
+        self.push_scope()
+
 
     def eat(self, token_type):
         if self.current_token.type == token_type:
             self.current_token = self.lexer.proxT()
         else:
             raise SyntaxError(f"Unexpected token: {self.current_token}, expected {token_type}")
+    
+    def push_scope(self):
+        self.symbol_table.append({})
+
+    def pop_scope(self):
+        if self.symbol_table:
+            self.symbol_table.pop()
+        else:
+            raise SyntaxError("Scope underflow: Tried to pop from an empty scope stack.")
+
+    def declare_variable(self, var_name, var_type):
+        if var_name in self.symbol_table[-1]:
+            raise SyntaxError(f"Variable '{var_name}' already declared in the current scope.")
+        self.symbol_table[-1][var_name] = var_type
+
+    def lookup_variable(self, var_name):
+        for scope in reversed(self.symbol_table):
+            if var_name in scope:
+                return scope[var_name]
+        raise SyntaxError(f"Variable '{var_name}' not declared.")
 
     def program_declaration(self):
         if self.current_token.type == Type.RESERVED_WORDS['PROGRAM']:
@@ -38,19 +60,21 @@ class SyntacticAnalyzer:
             elif self.current_token.type == Type.RESERVED_WORDS['BEGIN']:
                 self.block()  
                 break  
-
         if self.current_token.type == Type.RESERVED_WORDS['END']:
             self.eat(Type.RESERVED_WORDS['END'])
-
+        
+            # Permitir '.' diretamente após 'END' no programa principal
             if self.current_token.type == Type.RESERVED_TOKENS['.']:
                 self.eat(Type.RESERVED_TOKENS['.'])
+            elif self.current_token.type == Type.RESERVED_TOKENS[';']:
+                self.eat(Type.RESERVED_TOKENS[';'])
             else:
-                raise SyntaxError(f"Expected '.' after 'END', found {self.current_token.value}")
+                raise SyntaxError(f"Expected '.' or ';' after 'END', found {self.current_token.value}")
         else:
             raise SyntaxError(f"Expected 'END' to close the program, found {self.current_token.value}")
 
-
     def block(self):
+        self.push_scope()
         if self.current_token.type == Type.RESERVED_WORDS['BEGIN']:
             self.eat(Type.RESERVED_WORDS['BEGIN'])
             while self.current_token.type != Type.RESERVED_WORDS['END']:
@@ -59,6 +83,8 @@ class SyntacticAnalyzer:
             self.eat(Type.RESERVED_TOKENS[';'])
         else:
             raise SyntaxError(f"Expected 'BEGIN', found {self.current_token.value}")
+        self.pop_scope()
+
 
     def statement(self):
         print(f"Current token: {self.current_token}")
@@ -113,7 +139,7 @@ class SyntacticAnalyzer:
         self.eat(Type.RESERVED_TOKENS['('])
 
         while self.current_token.type != Type.RESERVED_TOKENS[')']:
-            self.expression()  # Escreve a expressão ou variável que queremos exibir
+            self.expression() 
             if self.current_token.type == Type.RESERVED_TOKENS[',']:
                 self.eat(Type.RESERVED_TOKENS[','])
 
@@ -142,43 +168,125 @@ class SyntacticAnalyzer:
     def variable_declaring(self):
         self.eat(Type.RESERVED_WORDS['VAR'])
         var_names = []
-        
+
         while True:
-            var_name = self.current_token.value
-            self.eat(Type.IDENTIFIER)
-            if var_name in self.symbol_table:
-                raise SyntaxError(f"Variable '{var_name}' already declared.")
-            var_names.append(var_name)
+            if self.current_token.type == Type.IDENTIFIER:
+                var_names.append(self.current_token.value)
+                self.eat(Type.IDENTIFIER)
+            else:
+                raise SyntaxError(f"Expected identifier, found {self.current_token}")
+
             if self.current_token.type == Type.RESERVED_TOKENS[',']:
                 self.eat(Type.RESERVED_TOKENS[','])
             else:
                 break
-        
-        self.eat(Type.RESERVED_TOKENS[':'])
-        var_type = self.current_token.value
-        if var_type.upper() not in Type.RESERVED_TYPES:
-            raise SyntaxError(f"Invalid type '{var_type}' for variable.")
-        self.eat(Type.IDENTIFIER)
+            
+        if self.current_token.type == Type.RESERVED_TOKENS[':']:
+            self.eat(Type.RESERVED_TOKENS[':'])
+        else:
+            raise SyntaxError(f"Expected ':', found {self.current_token}")
+
+        if self.current_token.type == Type.IDENTIFIER and self.current_token.value.upper() in Type.RESERVED_TYPES:
+            var_type = self.current_token.value.upper()
+            self.eat(Type.IDENTIFIER)
+        else:
+            raise SyntaxError(f"Invalid or missing type for variable declaration, found {self.current_token}")
 
         for var_name in var_names:
-            self.symbol_table.add((var_name, var_type))
-        
-        self.eat(Type.RESERVED_TOKENS[";"])
+            self.declare_variable(var_name, var_type)
+            
+        if self.current_token.type == Type.RESERVED_TOKENS[";"]:
+            self.eat(Type.RESERVED_TOKENS[";"])
+        else:
+            raise SyntaxError(f"Expected ';' after variable declaration, found {self.current_token}")
 
     def variable_assignment(self):
         var_name = self.current_token.value
-        if var_name not in [var[0] for var in self.symbol_table]:
-            raise SyntaxError(f"Variable '{var_name}' not declared before use.")
+        # Busca o tipo da variável no escopo
+        var_type = self.lookup_variable(var_name)
 
         self.eat(Type.IDENTIFIER)  
         self.eat(Type.RESERVED_TOKENS[':=']) 
 
-        self.expression() 
+        # Verifica e avalia a expressão do lado direito da atribuição
+        assigned_type = self.evaluate_expression()
 
-        if self.current_token.type == Type.RESERVED_TOKENS[';']: 
-            self.eat(Type.RESERVED_TOKENS[';']) 
+        # Verifica a compatibilidade de tipos
+        if var_type != assigned_type:
+            raise SyntaxError(f"Type mismatch: Cannot assign '{assigned_type}' to '{var_type}'.")
+
+        # Consome o ponto e vírgula no final da atribuição
+        if self.current_token.type == Type.RESERVED_TOKENS[';']:
+            self.eat(Type.RESERVED_TOKENS[';'])
         else:
-            raise SyntaxError(f"Expected ';' at the end of assignment at line {self.current_token.position}.")
+            raise SyntaxError(f"Expected ';' at the end of assignment, found {self.current_token}")
+
+    def evaluate_expression(self):
+        # Começa avaliando o primeiro termo
+        result_type = self.evaluate_term()
+
+        # Avalia operadores de soma/subtração
+        while self.current_token.type in [Type.RESERVED_TOKENS['+'], Type.RESERVED_TOKENS['-']]:
+            operator = self.current_token.type
+            self.eat(operator)
+            term_type = self.evaluate_term()
+
+            # Verifica a compatibilidade dos tipos
+            if result_type != term_type:
+                raise SyntaxError(f"Type mismatch in operation: '{result_type}' and '{term_type}' are incompatible.")
+
+            # Atualiza o tipo do resultado, se necessário (ex: float em operações com float)
+            if result_type == Type.RESERVED_TYPES["FLOAT"] or term_type == Type.RESERVED_TYPES["FLOAT"]:
+                result_type = Type.RESERVED_TYPES["FLOAT"]
+
+        return result_type
+
+    
+    def evaluate_term(self):
+        # Começa avaliando o primeiro fator
+        result_type = self.evaluate_factor()
+
+        # Avalia operadores de multiplicação/divisão
+        while self.current_token.type in [Type.RESERVED_TOKENS['*'], Type.RESERVED_TOKENS['/']]:
+            operator = self.current_token.type
+            self.eat(operator)
+            factor_type = self.evaluate_factor()
+
+            # Verifica a compatibilidade dos tipos
+            if result_type != factor_type:
+                raise SyntaxError(f"Type mismatch in operation: '{result_type}' and '{factor_type}' are incompatible.")
+
+            # Atualiza o tipo do resultado, se necessário (ex: float em operações com float)
+            if result_type == Type.RESERVED_TYPES["FLOAT"] or factor_type == Type.RESERVED_TYPES["FLOAT"]:
+                result_type = Type.RESERVED_TYPES["FLOAT"]
+
+        return result_type
+
+    
+    def evaluate_factor(self):
+        if self.current_token.type == Type.IDENTIFIER:
+            # Busca o tipo da variável e consome o token
+            var_type = self.lookup_variable(self.current_token.value)
+            self.eat(Type.IDENTIFIER)
+            return var_type
+
+        elif self.current_token.type == Type.RESERVED_TYPES["INT"]:
+            self.eat(Type.RESERVED_TYPES["INT"])
+            return Type.RESERVED_TYPES["INT"]
+
+        elif self.current_token.type == Type.RESERVED_TYPES["FLOAT"]:
+            self.eat(Type.RESERVED_TYPES["FLOAT"])
+            return Type.RESERVED_TYPES["FLOAT"]
+
+        elif self.current_token.type == Type.RESERVED_TOKENS['(']:
+            self.eat(Type.RESERVED_TOKENS['('])
+            result_type = self.evaluate_expression()
+            self.eat(Type.RESERVED_TOKENS[')'])
+            return result_type
+
+        else:
+            raise SyntaxError(f"Unexpected token in factor: {self.current_token}")
+
 
     def procedure_call(self):
         print(f"Procedure call detected for '{self.current_token.value}'")
@@ -215,11 +323,6 @@ class SyntacticAnalyzer:
             self.eat(op)
             self.term() 
 
-    #def read_expression(self):
-    #def proc_expression(self):
-    #def write_expression(self):
-     
-
     def term(self):
         self.factor()
         while self.current_token.type in [Type.RESERVED_TOKENS['+'], Type.RESERVED_TOKENS['-']]:
@@ -242,7 +345,6 @@ class SyntacticAnalyzer:
             self.eat(Type.RESERVED_WORDS['PROCEDURE'])
             
             procedure_name = self.current_token.value
-            print(f"Procedure name: {procedure_name}")
             self.eat(Type.IDENTIFIER)
             
             self.eat(Type.RESERVED_TOKENS['('])
@@ -257,9 +359,12 @@ class SyntacticAnalyzer:
             self.eat(Type.RESERVED_TOKENS[')'])
             self.eat(Type.RESERVED_TOKENS[';'])
             
+            self.push_scope()
             self.block()
+            self.pop_scope()
         else:
             raise SyntaxError(f"Expected 'PROCEDURE' keyword, found {self.current_token.value}")
+
 
     def analyze(self):
         self.program_declaration() 
@@ -271,3 +376,4 @@ class SyntacticAnalyzer:
                 self.procedure_declaration()
 
         self.block()
+
