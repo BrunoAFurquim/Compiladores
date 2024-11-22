@@ -1,0 +1,12 @@
+program SimpleIf;
+var a, b: float;
+
+begin
+    a := 5.5;
+    b := 10.0;
+    if a > b then
+        a := b;
+    else
+        b := a;
+end;
+end.
