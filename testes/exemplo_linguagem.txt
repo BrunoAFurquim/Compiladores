@@ -1,33 +1,16 @@
-program ExemploLALG;
+program TesteCompilador;
+var a, b: int;
+var c: float;
+var resultado: float;
 
-var
-  a, b, resultado: int;
-  condicao: boolean;
-
-procedure soma(x, y: int; var res: int);
+procedure calculaResultado();
 begin
-  res := x + y;
+    var local1, local2: int;
+    local1 := 10;               
+    local2 := local1 + 20;      
+    a := local1 + local2;       
+    c := 1.5;
+    resultado := c / 2.0;       
 end;
-
-procedure imprimirValor(valor: int);
-begin
-  write(valor);
-end;
-
-begin
-  a := 10;
-  b := 20;
-  
-  if a < b then
-    condicao := true
-  else
-    condicao := false;
-
-  if condicao then
-  begin
-    soma(a, b, resultado);
-    imprimirValor(resultado);
-  end
-  else
-    write(0);
+              
 end.
