@@ -66,36 +66,26 @@ class Interface:
     def generate_code(self):
         lexer = LexicalAnalyzer(self.original_expression)
         parser = SyntacticAnalyzer(lexer)
-        code_generator = StackCodeGenerator()  # Criar a instância do gerador de código
+        code_generator = StackCodeGenerator()
 
         try:
-            parser.program_declaration()  # Análise sintática do código
+            parser.program_declaration()  # Análise sintática do programa
             self.right_text.insert(tk.END, "\nSyntactic analysis: Success", "success")
 
-            # Gerar o código a partir da análise sintática
-            code_generator.generate_program(memory_slots=10)  # Exemplo de alocação de memória
+            # Gera o código para variáveis
+            for var_name, var_type in parser.declared_variables:
+                code_generator.generate_variable_declaration(var_name, var_type)
 
-            # Suponha que o parser tenha identificado variáveis e procedimentos, então gere o código automaticamente
-            for var in parser.declared_variables:
-                code_generator.generate_variable_declaration(var)  # Gerar código de declaração de variável
-
+            # Gera o código para procedimentos
             for proc in parser.declared_procedures:
-                code_generator.generate_procedure_declaration(proc)  # Gerar código de declaração de procedimento
+                code_generator.generate_procedure_declaration(proc)
 
-            # Aqui você pode adicionar mais verificações conforme a sua análise sintática
-            # Exemplo de operações dentro de procedimentos:
-            for statement in parser.statements:
-                if statement.type == "assignment":
-                    code_generator.generate_assignment(statement)  # Gerar código de atribuição
-                elif statement.type == "operation":
-                    code_generator.generate_operation(statement)  # Gerar código de operação (ex: soma, subtração)
-
-            # Finaliza a geração do código
             self.generated_code = code_generator.get_code()
-            self.display_generated_code(self.generated_code)  # Exibe o código gerado
+            self.display_generated_code(self.generated_code)
 
         except SyntaxError as e:
             self.right_text.insert(tk.END, f"\nSyntactic analysis ERROR: {e}", "error")
+
 
     def display_tokens(self, tokens):
         for token in tokens:

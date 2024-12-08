@@ -7,6 +7,15 @@ class StackCodeGenerator:
         label = f"L{self.label_counter}"
         self.label_counter += 1
         return label
+    
+    def generate_variable_declaration(self, var_name, var_type):
+        self.code.append(f"DECLARE {var_name} : {var_type}")
+        
+    def generate_procedure_declaration(self, proc_name):
+        self.code.append(f"PROC {proc_name} BEGIN")
+
+    def get_code(self):
+        return "\n".join(self.code)
 
     def generate_program(self, memory_slots):
         self.code.append("INPP")  
