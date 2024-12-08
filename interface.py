@@ -3,7 +3,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from lexicalAnalyzer import LexicalAnalyzer, Type  
 from sysntaticAnalysis import SyntacticAnalyzer 
-
+from code_generator import StackCodeGenerator  
 class Interface:
     def __init__(self, process_input_callback):
         self.process_input_callback = process_input_callback
@@ -11,10 +11,12 @@ class Interface:
         self.root.title("Lexical Analyzer")
         self.root.attributes('-fullscreen', True)
 
+        # Menu com as opções
         self.menu_bar = tk.Menu(self.root)
         self.menu_bar.add_cascade(label="Open File", command=self.open_file)
         self.menu_bar.add_cascade(label="Run", command=self.run_lexical_analysis)
         self.menu_bar.add_cascade(label="Export", command=self.export)
+        self.menu_bar.add_cascade(label="Generate Code", command=self.generate_code)  # Novo botão para gerar código
         self.menu_bar.add_cascade(label="Exit", command=self.root.quit)
         self.root.config(menu=self.menu_bar)
 
@@ -60,6 +62,31 @@ class Interface:
         except SyntaxError as e:
             self.right_text.insert(tk.END, f"\nSyntactic analysis ERROR: {e}", "error")
 
+    # Novo método para gerar o código a partir da análise sintática
+    def generate_code(self):
+        lexer = LexicalAnalyzer(self.original_expression)
+        parser = SyntacticAnalyzer(lexer)
+        code_generator = StackCodeGenerator()
+
+        try:
+            parser.program_declaration()  # Análise sintática do programa
+            self.right_text.insert(tk.END, "\nSyntactic analysis: Success", "success")
+
+            # Gera o código para variáveis
+            for var_name, var_type in parser.declared_variables:
+                code_generator.generate_variable_declaration(var_name, var_type)
+
+            # Gera o código para procedimentos
+            for proc in parser.declared_procedures:
+                code_generator.generate_procedure_declaration(proc)
+
+            self.generated_code = code_generator.get_code()
+            self.display_generated_code(self.generated_code)
+
+        except SyntaxError as e:
+            self.right_text.insert(tk.END, f"\nSyntactic analysis ERROR: {e}", "error")
+
+
     def display_tokens(self, tokens):
         for token in tokens:
             if "UNKNOWN" in token:
@@ -69,6 +96,10 @@ class Interface:
             else:
                 tag = None
             self.right_text.insert(tk.END, f"{token}\n", tag)
+
+    def display_generated_code(self, generated_code):
+        self.right_text.insert(tk.END, "\nGenerated Code:\n", "success")
+        self.right_text.insert(tk.END, generated_code)
 
     def update_line_numbers(self, event=None):
         self.line_numbers.config(state='normal')
